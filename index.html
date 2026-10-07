@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Цифровой путеводитель по Башкирии</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+        /* Левая часть — карта */
+        .map-container {
+            flex: 2;
+            position: relative;
+            background: #e8f4e8;
+        }
+        .map-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        /* Точки на карте */
+        .point {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: #d32f2f;
+            border: 3px solid white;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+        }
+        .point:hover {
+            transform: scale(1.2);
+            background: #b71c1c;
+        }
+        /* Правая часть — чат */
+        .chat-container {
+            flex: 1;
+            background: #f5f5f5;
+            border-left: 2px solid #ccc;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            background: #2e7d32;
+            color: white;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .chat-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .chat-message {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        /* Карточка места (всплывает при клике) */
+        .place-card {
+            display: none;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 300px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            overflow: hidden;
+            z-index: 100;
+        }
+        .place-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+        .place-card .content {
+            padding: 15px;
+        }
+        .place-card h3 {
+            margin: 0 0 10px 0;
+            color: #2e7d32;
+        }
+        .place-card p {
+            margin: 0 0 15px 0;
+            font-size: 14px;
+            color: #555;
+        }
+        .place-card button {
+            background: #2e7d32;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 14px;
+        }
+        .place-card button:hover {
+            background: #1b5e20;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ЛЕВАЯ ЧАСТЬ: КАРТА -->
+    <div class="map-container">
+        <!-- Замени map.jpg на имя твоей карты -->
+        <img src="images/map.jpg" alt="Карта Башкирии">
+        
+        <!-- Точки на карте (координаты в процентах от размера картинки) -->
+        <div class="point" style="top: 30%; left: 45%;" onclick="showPlace('inzerskie')">1</div>
+        <div class="point" style="top: 45%; left: 55%;" onclick="showPlace('iremel')">2</div>
+        <div class="point" style="top: 55%; left: 40%;" onclick="showPlace('ai')">3</div>
+        <div class="point" style="top: 60%; left: 60%;" onclick="showPlace('yuryuzan')">4</div>
+        <div class="point" style="top: 70%; left: 50%;" onclick="showPlace('shulgan')">5</div>
+
+        <!-- Карточка места -->
+        <div class="place-card" id="placeCard">
+            <button class="close-btn" onclick="closeCard()">×</button>
+            <img id="cardImg" src="" alt="">
+            <div class="content">
+                <h3 id="cardTitle"></h3>
+                <p id="cardDesc"></p>
+                <button onclick="askGuide()">Спросить гида</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ПРАВАЯ ЧАСТЬ: ЧАТ -->
+    <div class="chat-container">
+        <div class="chat-header">🤖 Гид по Башкирии</div>
+        <div class="chat-body">
+            <div class="chat-message">
+                <b>Гид:</b> Здравствуйте! Я ваш гид по Башкирии. Нажмите на точку на карте, чтобы узнать о месте, или задайте вопрос.
+            </div>
+            <!-- Сюда будет вставлен виджет Suvvy -->
+            <div id="suvvy-chat"></div>
+        </div>
+    </div>
+
+    <script>
+        // Данные о местах
+        var places = {
+            inzerskie: {
+                title: "Инзерские зубчатки",
+                img: "images/inzerskie.jpg",
+                desc: "Горный хребет в Белорецком районе. Скалы, похожие на зубы дракона. Сложность средняя, 15 км."
+            },
+            iremel: {
+                title: "Гора Иремель",
+                img: "images/iremel.jpg",
+                desc: "Вторая по высоте гора Башкирии (1582 м). Священное место у башкир. Подъём 4-6 часов."
+            },
+            ai: {
+                title: "Река Ай",
+                img: "images/ai.jpg",
+                desc: "Одна из самых красивых рек Урала. Сплав 1 категории сложности. Сухие водопады, Айские притёсы."
+            },
+            yuryuzan: {
+                title: "Река Юрюзань",
+                img: "images/yuryuzan.jpg",
+                desc: "Горная река с перекатами. Лимоновский гребень, Идрисовская пещера. Сплав 2 дней."
+            },
+            shulgan: {
+                title: "Шульган-Таш (Капова пещера)",
+                img: "images/shulgan.jpg",
+                desc: "Пещера с наскальными рисунками возрастом 14 тысяч лет. Объект ЮНЕСКО."
+            }
+        };
+
+        var currentPlace = "";
+
+        // Показать карточку места
+        function showPlace(key) {
+            var place = places[key];
+            if (!place) return;
+            
+            document.getElementById('cardImg').src = place.img;
+            document.getElementById('cardTitle').innerText = place.title;
+            document.getElementById('cardDesc').innerText = place.desc;
+            document.getElementById('placeCard').style.display = 'block';
+            currentPlace = place.title;
+        }
+
+        // Закрыть карточку
+        function closeCard() {
+            document.getElementById('placeCard').style.display = 'none';
+        }
+
+        // Отправить вопрос гиду
+        function askGuide() {
+            alert('Вопрос про "' + currentPlace + '" отправлен гиду!');
+            // Здесь можно добавить код для отправки сообщения в чат Suvvy
+        }
+    </script>
+
+    <!-- ВСТАВЬ СЮДА КОД ВИДЖЕТА SUVvy (из раздела "Каналы") -->
+    <!-- <script src="..."></script> -->
+
+</body>
+</html>
