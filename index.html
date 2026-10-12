@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Цифровой путеводитель по Башкирии</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background: #f0f0f0;
+        }
+
+        /* --- КАРТА (слева) --- */
+        .map-container {
+            flex: 2;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .map-wrapper {
+            position: relative;
+            width: 881px;
+            height: 1090px;
+            transform: scale(0.7);
+            transform-origin: center center;
+            margin: -220px -180px;
+        }
+
+        .map-wrapper img.map-img {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* --- ТОЧКИ --- */
+        .point {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: #d32f2f;
+            border: 2px solid white;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+            z-index: 10;
+            transform: translate(-50%, -50%);
+        }
+
+        .point:hover {
+            transform: translate(-50%, -50%) scale(1.3);
+            background: #b71c1c;
+        }
+
+        /* --- ПАНЕЛЬ ИНФОРМАЦИИ (по центру, между картой и чатом) --- */
+        .info-panel {
+            flex: 1;
+            max-width: 340px;
+            background: #ffffff;
+            border-left: 2px solid #ccc;
+            border-right: 2px solid #ccc;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .info-panel h3 {
+            color: #2e7d32;
+            margin-top: 0;
+            font-size: 18px;
+        }
+
+        .info-panel img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .info-panel p {
+            font-size: 14px;
+            color: #444;
+            line-height: 1.5;
+        }
+
+        .info-placeholder {
+            color: #999;
+            text-align: center;
+            margin-top: 40px;
+            font-size: 14px;
+        }
+
+        /* --- ЧАТ (справа) --- */
+        .chat-container {
+            flex: 1;
+            max-width: 340px;
+            background: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .chat-header {
+            background: #2e7d32;
+            color: white;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .chat-message {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- КАРТА -->
+    <div class="map-container">
+        <div class="map-wrapper">
+            <img class="map-img" src="images/map.jpg" alt="Карта Башкирии">
+
+            <!-- 1. Инзерские зубчатки -->
+            <div class="point" style="left: 641px; top: 503px;" onclick="showPlace('inzerskie')">1</div>
+
+            <!-- 2. Гора Иремель -->
+            <div class="point" style="left: 727px; top: 465px;" onclick="showPlace('iremel')">2</div>
+
+            <!-- 3. Река Ай -->
+            <div class="point" style="left: 637px; top: 125px;" onclick="showPlace('ai')">3</div>
+
+            <!-- 4. Река Юрюзань -->
+            <div class="point" style="left: 672px; top: 373px;" onclick="showPlace('yuryuzan')">4</div>
+
+            <!-- 5. Шульган-Таш -->
+            <div class="point" style="left: 488px; top: 764px;" onclick="showPlace('shulgan')">5</div>
+        </div>
+    </div>
+
+    <!-- ПАНЕЛЬ ИНФОРМАЦИИ (по центру) -->
+    <div class="info-panel" id="infoPanel">
+        <div class="info-placeholder" id="infoPlaceholder">
+            👈 Нажмите на точку на карте, чтобы узнать о месте
+        </div>
+        <div id="infoContent" style="display:none;">
+            <img id="cardImg" src="" alt="">
+            <h3 id="cardTitle"></h3>
+            <p id="cardDesc"></p>
+        </div>
+    </div>
+
+    <!-- ЧАТ -->
+    <div class="chat-container">
+        <div class="chat-header">🤖 Гид по Башкирии</div>
+        <div class="chat-body">
+            <div class="chat-message">
+                <b>Гид:</b> Здравствуйте! Я ваш гид по Башкирии. Нажмите на точку на карте, чтобы увидеть информацию или задайте вопрос в чате, нажав на кнопку ниже. Я могу тебе рассказать информацию о растениях, животных и легендах Башкирии. Немного о городских достопримечательностях: музеи, парки, памятники, театры.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var places = {
+            inzerskie: {
+                title: "Инзерские зубчатки",
+                img: "images/inzerskie.jpg",
+                desc: "Горный хребет в Белорецком районе. Хребет получил название из-за скал, поднимающихся подобно зубцам. Сложен кварцитами, протяжённость — 8 километров, высота достигает 1161 метра. С некоторых вершин видно Ямантау и Иремель."
+            },
+            iremel: {
+                title: "Гора Иремель",
+                img: "images/iremel.jpg",
+                desc: "Белорецкий и Учалинский районы, на границе с Челябинской областью. Вторая по высоте вершина Южного Урала (1582 м). Двухвершинный массив: Большой и Малый Иремель. В прошлом гора находилась на родовых землях башкирских родов Кубау, Катай и Табын, считалась священной."
+            },
+            ai: {
+                title: "Река Ай",
+                img: "images/ai.jpg",
+                desc: "Челябинская область и Башкортостан, протекает через Салаватский, Кигинский, Дуванский и Мечетлинский районы. Одна из самых красивых рек Урала. Сплав 1 категории сложности. На реке нет бурных порогов и опасностей. Длина — 549 км. Горная часть реки — от истока до села Лаклы — наиболее популярна для сплавов."
+            },
+            yuryuzan: {
+                title: "Река Юрюзань",
+                img: "images/yuryuzan.jpg",
+                desc: "Башкортостан (Белорецкий, Салаватский, Дуванский, Нуримановский, Караидельский районы) и Челябинская область. Название переводится с башкирского как «большая река». Исток находится на восточном склоне горы Угловой Машак хребта Машак. Впадает в Павловское водохранилище. Сплав 2 дня."
+            },
+            shulgan: {
+                title: "Шульган-Таш (Капова пещера)",
+                img: "images/shulgan.jpg",
+                desc: "Бурзянский район, заповедник «Шульган-Таш», на правом берегу реки Белая. Одна из крупнейших карстовых пещер Южного Урала. Здесь обнаружены наскальные рисунки возрастом 16–20 тысяч лет — единственный пример палеолитического пещерного искусства в России. В 2025 году включена в список ЮНЕСКО."
+            }
+        };
+
+        function showPlace(key) {
+            var place = places[key];
+            if (!place) return;
+
+            document.getElementById('infoPlaceholder').style.display = 'none';
+            document.getElementById('infoContent').style.display = 'block';
+
+            document.getElementById('cardImg').src = place.img;
+            document.getElementById('cardTitle').innerText = place.title;
+            document.getElementById('cardDesc').innerText = place.desc;
+        }
+    </script>
+
+    <!-- ВИДЖЕТ SUVvy -->
+    <script src="https://storage1.suvvy.ai/widget/loader.js"
+      data-widget-id="6ac122b42756888c691fc4cc6ac670a7bef21f1a86cbb68d"
+      async
+    ></script>
+
+</body>
+</html>
